@@ -109,8 +109,44 @@ linearRegression <- function(countyname) {
   coeff <- coefficients(fit0315)
   mat <- cbind.data.frame(rep(1,13), data[14:26,2], data[14:26,3], data[14:26,4], data[14:26,9], data[14:26,10], data[14:26,11], data[14:26,12])
   hai_pred <- as.vector(as.matrix(mat) %*% as.matrix(coeff))
+  data$pred <- c(rep(NA, 13),hai_pred, rep(NA,2))
+  #data[14:26,] %>% ggplot(aes(Year)) + geom_point(aes(Year, HAI), color='red') + geom_point(aes(Year, pred), color='blue')
 }
-data <- tables[[1]]
+linearRegressionPlot <- function(countyname) {
+  i = which(countynames == countyname) 
+  data <- tables[[i]]
+  fit0315 <- glm(data[14:24,13] ~ data[14:24,2] + data[14:24,3] + data[14:24,4] + data[14:24,9] + data[14:24,10] + data[14:24,11] + data[14:24,12])
+  coeff <- coefficients(fit0315)
+  mat <- cbind.data.frame(rep(1,13), data[14:26,2], data[14:26,3], data[14:26,4], data[14:26,9], data[14:26,10], data[14:26,11], data[14:26,12])
+  hai_pred <- as.vector(as.matrix(mat) %*% as.matrix(coeff))
+  data$pred <- c(rep(NA, 13),hai_pred, rep(NA,2))
+  ggplot(data[14:26,], aes(Year)) + geom_point(aes(Year, HAI), color='red') + geom_point(aes(Year, pred), color='blue')
+}
+goodnames <- c()
+for (countyname in countynames) {
+  tryCatch({linearRegression(countyname)
+    goodnames <- c(goodnames,countyname)},warning = function(war) {
+      
+      # warning handler picks up where error was generated
+      
+    }, error = function(err) {
+      
+      # error handler picks up where error was generated
+      
+    }, finally = {
+      
+      
+    })
+}
+plots <- list()
+i = 1
+for (countyname in goodnames) {
+  plots[[i]] <- linearRegressionPlot(countyname)
+  i = i + 1
+}
+source("multiplot.R")
+multiplot(plotlist=plots, cols=9)
+  godata <- tables[[1]]
 newmedhome <- data.frame(matrix(ncol = 52, nrow=336/12))
 medhome = medhome[1:336,]
 f <- function(x) as.numeric(gsub("[,\\$]","",x))
