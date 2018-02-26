@@ -1,0 +1,6 @@
+load("/Users/elliotstahnke/Dropbox/SUSA/gasdf.rds")
+load("/Users/elliotstahnke/Dropbox/SUSA/multisize.rds")
+load("/Users/elliotstahnke/Dropbox/SUSA/gas.rds")
+load("/Users/elliotstahnke/Dropbox/SUSA/electricity.rds")
+load("/Users/elliotstahnke/Dropbox/SUSA/multisize.rds")
+load("/Users/elliotstahnke/Dropbox/SUSA/RentalPrice.RDS")
