@@ -9,7 +9,6 @@ medinc <- readRDS("RDS/MedianIncome.RDS")
 medhome <- readRDS("RDS/MedianHomePrice.RDS")
 haiyear <- readRDS("RDS/haiyear.rds")
 buildingpermits <- readRDS("RDS/BuildingPermits.RDS")
-rentalprice <- readRDS("RDS/RentalPrice.RDS") %>% subset(State == "CA")
 popdens <- readRDS("RDS/pop_dens.rds")
 fares <- readRDS("RDS/Passenger_Fares.rds")
 miles <- readRDS("RDS/Vehicle_Miles.rds")
@@ -19,6 +18,9 @@ inventory <- inventory[-50,]
 hours <- readRDS("RDS/Vehicle_Hours.rds")
 hours <- hours[-46,]
 hai <- readRDS("RDS/haiyear.rds")
+unemployment <- readRDS("RDS/unemployment.rds")
+rentalprice <- readRDS("RDS/RentalPrice.RDS") %>% subset(State == "CA")
+acs <- readRDS("data-collection/cleaned-data/Tidy ACS Data (2011-2016)")
 
 countynames <- buildingpermits$County
 
@@ -28,10 +30,11 @@ clean.numeric <- function(x) sapply(x,f)
 housingUnits[,2:14] %<>% clean.numeric
 
 tables <- list()
-num_cols = 13
+num_cols = 117
 for (i in 1:58) {
   data <- data.frame(matrix(ncol = num_cols, nrow = 28))
   countyname = countynames[i]
+  print(paste("Currently on",countyname))
   colnames(data)[1] <- "Year"
   data$Year <- 1990:2017
   
@@ -84,6 +87,40 @@ for (i in 1:58) {
     v[is.nan(v)] <- NA
     data[2:28,13] <- v
   }
+  
+  colnames(data)[14] <- c("Unemployment")
+  newunemployment <- c()
+  countyunemployment <- subset(unemployment, grepl(countyname,`Area Name`))
+  f <- function(x) as.numeric(gsub("[,\\$%]","",x))
+  for (j in 1:(336/12)) {
+    newunemployment <- c(newunemployment, mean(sapply(countyunemployment[(12*(j-1)+1):(12*j),11],f), na.rm=TRUE))
+  }
+  data[,14] <- newunemployment
+  
+  colnames(data)[15] <- c("Rental Price")
+  ind <- which(rentalprice$RegionName == countyname)
+  if (length(ind) != 0) {
+    newrents <- c()
+    for (j in 1:8) {
+      newrents <- c(newrents, mean(clean.numeric(rentalprice[ind, ((j-1)*12+7):(min(100,(j*12+7)))]), na.rm=TRUE))
+      newrents[is.nan(newrents)] <- NA
+    }
+    data[21:28, 15] <- newrents
+  }
+  
+  cols <- unique(acs$`Statistic Description`)
+  colnames(data)[16:117] <- cols
+  for (k in 1:length(cols)) {
+    col = cols[k]
+    smallTable <- subset(acs, `Statistic Description` == col & grepl(paste(countyname, "County"), `Geography`) &Statistic == "Estimate")
+    if (dim(smallTable)[1] != 0) {
+    for (j in 1:length(smallTable$Year)) {
+      year <- smallTable$Year[j]
+      data[year-1989, k+15] = smallTable$Value[j]
+    }
+    }
+  }
+  
   tables[[i]] <- data
 }
 View(tables[1])
@@ -91,9 +128,10 @@ View(tables[1])
 
 counts <- cbind(tables[[1]])
 counts[TRUE] <- 0
+counts[,1] <- 1990:2017
 for (i in 1:length(tables)) {
   for (j in 1:length(tables[[1]][,1])) {
-    for (k in 1:length(tables[[1]][1,])) {
+    for (k in 2:length(tables[[1]][1,])) {
       if (!is.na(tables[[i]][j,k])) {
         counts[j,k] <- counts[j,k] + 1
       }
@@ -126,16 +164,8 @@ goodnames <- c()
 for (countyname in countynames) {
   tryCatch({linearRegression(countyname)
     goodnames <- c(goodnames,countyname)},warning = function(war) {
-      
-      # warning handler picks up where error was generated
-      
     }, error = function(err) {
-      
-      # error handler picks up where error was generated
-      
     }, finally = {
-      
-      
     })
 }
 plots <- list()
@@ -156,3 +186,4 @@ for (i in 1:(336/12)) {
 }
 colnames(newmedhome) <- c("Year", colnames(medhome)[3:53])
 saveRDS(newmedhome, "MedianHomePrice.rds")
+saveRDS(tables, "dataByCounty.rds")
