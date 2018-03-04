@@ -1,0 +1,204 @@
+---
+title: "attempt"
+author: "Ashley Chien"
+date: "March 4, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+### ALL COUNTIES
+
+all_counties = c("Alameda", "Alpine", "Amador", "Butte", "Calaveras", "Colusa", "Contra.Costa", "Del.Norte", "El.Dorado", "Fresno", "Glenn", "Humboldt", "Imperial", "Inyo", "Kern", "Kings", "Lake", "Lassen", "Los.Angeles", "Madera", "Marin", "Mariposa", "Mendocino", "Merced", "Modoc", "Mono", "Monterey", "Napa", "Nevada", "Orange", "Placer", "Plumas", "Riverside", "Sacramento", "San.Benito", "San.Bernardino", "San.Diego", "San.Francisco", "San.Joaquin", "San.Luis.Obispo", "San.Mateo", "Santa.Barbara", "Santa.Clara", "Santa.Cruz", "Shasta", "Sierra", "Siskiyou", "Solano", "Sonoma", "Stanislaus", "Sutter", "Tehama", "Trinity", "Tulare", "Tuolumne", "Ventura", "Yolo", "Yuba")
+
+print(length(all_counties))
+
+```
+```{r}
+### ALL YEARS
+start_year = 1996
+start_month = 4
+
+end_year = 2018
+end_month = 1
+
+all_years = c()
+
+while (start_year <= end_year) {
+  if (start_month < 10) {
+    helper <- paste0("0", start_month)
+    all_years = c(all_years, paste0(paste0(start_year, "-"), helper))
+  } else {
+    all_years = c(all_years, paste0(paste0(start_year, "-"), start_month))
+
+  }
+  
+  start_month = start_month + 1
+  if (start_year == end_year & start_month == end_month + 1) {
+    break
+  }
+  if (start_month == 13) {
+    start_year = start_year + 1
+    start_month = 1
+  }
+}
+
+
+
+
+```
+
+```{r}
+value = read.csv("Monthly_CSV/ValuePerSquareFoot.csv")
+
+
+
+```
+
+
+```{r}
+
+### CLEAN UP COUNTY NAMES
+
+cleanCountyNames <- function(value, word) {
+
+  colNames <- colnames(value)[-1]
+  pattern <- regexpr(paste0(word, "\\.[A-Za-z.]+\\.California"), colNames)
+  matches <- regmatches(colNames, pattern)
+  for (i in 1:length(matches)) {
+    matches[[i]][1] <- substr(matches[[i]][1], nchar(word) + 2, nchar(matches[[i]][1])) # get rid of Foot
+    matches[[i]][1] <- substr(matches[[i]][1], 1, nchar(matches[[i]][1]) - 11) # get rid of California
+  
+  }
+  colnames(value) <- c("Date", matches)
+  return(value)
+}
+
+```
+
+```{r}
+
+### CLEAN UP DATES
+date_cleaner <- function(value) {
+  new_times <- c()
+  for (t in value["Date"]) {
+    new_times <- c(new_times, paste0(paste0(substr(t, 1, 4), "-"), substr(t, 5, 6)))
+
+  }
+
+  value["Date"] <- new_times
+  return(value)
+}
+
+
+```
+
+```{r}
+## FUNCTION TO ADD COLUMNS WITH NAs FOR MISSING COUNTIES
+add_missing_columns <- function(data_frame) {
+  for (county in all_counties) {
+    if (!(county %in% colnames(data_frame))) {
+      data_frame[county] = NA
+    }
+  }
+  return(data_frame)
+  
+}
+
+```
+
+```{r}
+value <- add_missing_columns(value)
+
+
+```
+
+```{r}
+
+### FUNCTION TO ADD ROWS WITH NAs FOR MISSING MONTHS
+add_missing_years <- function(data_frame) {
+  for (year in all_years) {
+    if (!(year %in% unlist(data_frame["Date"]))) {
+      data_frame[nrow(data_frame) + 1,] = c(year, rep(NA, 58))
+      
+    }
+  }
+  
+  return(data_frame)
+  
+}
+
+```
+
+```{r}
+
+saveRDS(value, "Monthly_RDS/ValuePerSquareFoot.RDS")
+
+
+
+```
+
+```{r}
+
+### FORECLOSURES
+
+f = read.csv("Monthly_CSV/Foreclosures.csv")
+
+f <- cleanCountyNames(f, "Foreclosed")
+
+f <- date_cleaner(f)
+
+f <- add_missing_columns(f)
+f <- add_missing_years(f)
+
+
+```
+
+```{r}
+saveRDS(f, "Monthly_RDS/Foreclosures.RDS")
+
+```
+
+```{r}
+
+### INVENTORY
+
+i = read.csv("Monthly_CSV/Inventory.csv")
+i <- cleanCountyNames(i, "Adjusted")
+i <- date_cleaner(i)
+i <- add_missing_columns(i)
+i <- add_missing_years(i)
+saveRDS(i, "Monthly_RDS/Inventory.RDS")
+
+
+
+
+```
+
+```{r}
+
+### FUNCTION TO MAKE ALL CALLS
+l <- read.csv("Monthly_CSV/ListingPricePerSquareFoot.csv")
+
+doEverything <- function(keyword, name) {
+  i = read.csv(paste0("Monthly_CSV/", paste0(name, ".csv")))
+  i <- cleanCountyNames(i, keyword)
+  i <- date_cleaner(i)
+  i <- add_missing_columns(i)
+  i <- add_missing_years(i)
+  saveRDS(i, paste0("Monthly_RDS/", paste0(name, ".RDS")))
+  return(i)
+  
+}
+
+l <- doEverything("Homes", "ListingPricePerSquareFoot")
+ptr <- doEverything("Ratio", "PriceToRentRatio")
+r <- doEverything("Homes", "RentalPricePerSquareFoot")
+s <- doEverything("Homes", "SoldPricePerSquareFoot")
+
+
+```
