@@ -1,2 +1,2 @@
-model_checkpoint_path: "full_ChinaLSTM.ckpt"
-all_model_checkpoint_paths: "full_ChinaLSTM.ckpt"
+model_checkpoint_path: "firstmodel.ckpt"
+all_model_checkpoint_paths: "firstmodel.ckpt"
