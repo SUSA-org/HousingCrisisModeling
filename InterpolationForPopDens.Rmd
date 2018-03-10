@@ -1,0 +1,46 @@
+---
+title: "Cat"
+author: "Ashley Chien"
+date: "March 9, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(magrittr)
+library(ggplot2)
+library(tseries)
+library(forecast)
+library(grid)
+library(zoo)
+hai <- readRDS("RDS/haiyear.rds")
+buildingpermitsfornames <- readRDS("RDS/BuildingPermits.RDS")
+countynames <- buildingpermitsfornames$County
+
+pop_dens <- readRDS("RDS/PopulationDensity.RDS")
+years <- seq(as.Date("1990-01-01"), as.Date("2016-01-01"), by="months")
+
+
+dens_month <- data.frame(matrix(ncol = 59, nrow = 325 - 12))
+dens_month[,1] <- years
+
+for(j in 1:58) {
+  for (i in 1:26) {
+    sequence <- seq(pop_dens[i, j], pop_dens[i+1, j], length.out = 13)
+    dens_month[((i-1)*12+1):((i-1)*12+13),j+1] <- sequence
+  }
+}
+
+
+dens_month[1:313,] <- dens_month[313:1,]
+#View(vacmonth)
+#saveRDS(vacmonth,"Monthly_RDS/VacancyRates.RDS")
+
+```
+
+
