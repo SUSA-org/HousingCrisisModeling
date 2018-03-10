@@ -140,6 +140,10 @@ for (i in 1:length(tables)) {
 }
 View(counts)
 
+for (i in 1:length(tables)) {
+  
+}
+
 linearRegression <- function(countyname) {
   i = which(countynames == countyname) 
   data <- tables[[i]]
