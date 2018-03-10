@@ -10,7 +10,7 @@ hai <- readRDS("RDS/haiyear.rds")
 buildingpermitsfornames <- readRDS("RDS/BuildingPermits.RDS")
 countynames <- buildingpermitsfornames$County
 
-vacrate <- read.csv("Monthly_CSV/GasByCounty.csv", sep="\t")
+vacrate <- readRDS("RDS/electricity.rds")
 vacrate[,3:29] <- vacrate[,29:3]
 
 View(vacrate)
@@ -21,7 +21,7 @@ vacmonth[,1] <- years
 f <- function(x) as.numeric(gsub("[,\\$%]","",x))
 clean.numeric <- function(x) sapply(x,f)
 vacrate[,3:29] <- clean.numeric(vacrate[,3:29])
-for(j in 1:46) {
+for(j in 1:58) {
   countyname = tolower(vacrate[j,1])
   ind = which(grepl(countyname, countynames, ignore.case=TRUE))
   for (i in 3:28) {
@@ -30,4 +30,4 @@ for(j in 1:46) {
   }
 }
 View(vacmonth)
-saveRDS(vacmonth,"Monthly_RDS/GasConsumption.RDS")
+#saveRDS(vacmonth,"Monthly_RDS/Electricity.RDS")

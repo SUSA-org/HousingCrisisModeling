@@ -27,6 +27,10 @@ valuepersquarefoot <- valuepersquarefoot[order(valuepersquarefoot$Time),]
 foreclosures <- read.csv("Monthly_CSV/Foreclosures.csv")
 vacancy <- readRDS("Monthly_RDS/VacancyRates.RDS")
 gasconsumption <- readRDS("Monthly_RDS/GasConsumption.RDS")
+electricity <- readRDS("Monthly_RDS/Electricity.RDS")
+income <- readRDS("Monthly_RDS/MedianIncomeByMonth.rds")
+popdens <- readRDS("Monthly_RDS/PopulationDensity.rds")
+popdens[1:313,] <- popdens[313:1,]
 countynames <- buildingpermitsfornames$County
 
 f <- function(x) as.numeric(gsub("[\\.,\\$%]","",x))
@@ -80,11 +84,25 @@ for (i in 1:58) {
   colnames(data)[8] <- c("Gas Consumption")
   data[1:313, 8] <- clean.numeric(gasconsumption[, i+1])
   
-  colnames(data)[9] <- c("Foreclosures")
-  colnames(data)[10] <- c("Foreclosures")
-  colnames(data)[11] <- c("Foreclosures")
+  colnames(data)[9] <- c("Electricity")
+  data[1:313, 9] <- clean.numeric(electricity[, i+1])
+  
+  colnames(data)[10] <- c("Median Income")
+  ind <- which(countyname == colnames(income))
+  data[73:301, 10] <- clean.numeric(income[,ind])
+  
+  colnames(data)[11] <- c("Population Density")
+  data[1:313, 11] <- clean.numeric(popdens[,i+1])
+
   tables[[i]] <- data
 }
 print(proc.time() - start)
 }
 View(tables[1])
+
+counts <- cbind(tables[[1]])
+counts[,-1] <- 0
+for (i in 1:length(tables)) {
+  counts[,-1] <- counts[,-1] + 1 - matrix(as.numeric(is.na.data.frame(tables[[i]][,-1])), nrow=336, byrow=FALSE)
+}
+View(counts)
