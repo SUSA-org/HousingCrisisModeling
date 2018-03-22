@@ -1,2 +1,2 @@
-model_checkpoint_path: "firstmodel.ckpt"
-all_model_checkpoint_paths: "firstmodel.ckpt"
+model_checkpoint_path: "Alameda.ckpt"
+all_model_checkpoint_paths: "Alameda.ckpt"
