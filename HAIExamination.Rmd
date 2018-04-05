@@ -1,0 +1,79 @@
+---
+title: "LookingAtHAI"
+author: "Ashley Chien"
+date: "March 20, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+
+```
+
+```{r}
+hai = readRDS("TraditionalHAIByMonth.rds")
+
+### PASSENGER FARES
+passfares = readRDS("Monthly_RDS/PassengerFareByMonth.rds")
+
+hai_a = hai[145:289, 3] ## get only 2003-01-01 to 2015-01-01, just Alameda
+pass_fares = passfares[, 3] ## everything, just Alameda
+years = passfares[, 1]
+
+combine_both = data.frame(years, hai_a, pass_fares)
+
+ggplot(combine_both) + geom_line(aes(x=years, y=pass_fares))
+
+ggplot(combine_both) + geom_line(aes(x=years, y=hai_a))
+
+
+### CRIME
+
+crime = readRDS("Monthly_RDS/CrimeCountByMonth.rds")
+crime <- crime[nrow(crime):1,]
+
+hai_b <- hai[1:301, 3] ## only until 2016-01-01, only Alameda
+crime_b <- crime[301:1, 2] # only from 1991-01-01, only Alameda
+crime_years <- hai[1:301, 1]
+
+combine_b = data.frame(hai_b, crime_b)
+
+ggplot(combine_b) + geom_line(aes(x=crime_years, y=hai_b))
+ggplot(combine_b) + geom_line(aes(x=crime_years, y=crime_b))
+
+
+
+
+```
+
+```{r}
+
+### PLOTS PREDICTOR VARIABLE AGAINST HAI
+### rds_file argument does not need Monthly_RDS tag in beginning (example: PassengerFareByMonth.rds)
+visualize <- function(rds_file, county) {
+  hai = readRDS("TraditionalHAIByMonth.rds")
+  if (sum(is.na(hai[county])) > 0) {
+    print("This county has NAs in HAI data. Cannot plot.")
+    return(-1)
+  }
+  
+  predictor = readRDS(paste0("Monthly_RDS/", rds_file))
+  
+  hai_a = hai[]
+  
+  
+}
+
+visualize("haha", "Marin")
+
+pop_dens = readRDS("Monthly_RDS/PopulationDensity.rds")
+pop_dens[301:1, ]
+
+
+
+
+```

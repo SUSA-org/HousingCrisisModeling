@@ -1,0 +1,17 @@
+---
+title: "try"
+author: "Ashley Chien"
+date: "March 15, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+data = readRDS("Monthly_RDS/CountyMonthlyData.RDS")
+data[1]
+
+passenger_fares = readRDS("RDS/Passenger_fares.RDS")
+```
