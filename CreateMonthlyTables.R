@@ -10,8 +10,7 @@ medhome <- readRDS("RDS/MedianHomePrice.RDS")
 haiyear <- readRDS("RDS/haiyear.rds")
 buildingpermitsfornames <- readRDS("RDS/BuildingPermits.RDS")
 buildingpermits <- read.csv("Monthly_CSV/housing.csv", header=FALSE)
-popdens <- readRDS("RDS/pop_dens.rds")
-fares <- readRDS("RDS/Passenger_Fares.rds")
+popdens <- readRDS("Monthly_RDS/PopulationDensity.rds")
 miles <- readRDS("RDS/Vehicle_Miles.rds")
 miles <- miles[-49,]
 inventory <- readRDS("RDS/Vehicle_Inventory.rds")
@@ -30,6 +29,14 @@ gasconsumption <- readRDS("Monthly_RDS/GasConsumption.RDS")
 electricity <- readRDS("Monthly_RDS/Electricity.RDS")
 income <- readRDS("Monthly_RDS/MedianIncomeByMonth.rds")
 popdens <- readRDS("Monthly_RDS/PopulationDensity.rds")
+crime <- readRDS("Monthly_RDS/CrimeCountByMonth.rds")
+crime[1:433,] <- crime[433:1,]
+fares <- readRDS("Monthly_RDS/PassengerFareByMonth.rds")
+colnames(fares)[50] <- "Yuba"
+hours <- readRDS("Monthly_RDS/VehicleHoursByMonth.rds")
+colnames(hours)[50] <- "Yuba"
+miles <- readRDS("Monthly_RDS/VehicleMilesByMonth.rds")
+colnames(miles)[50] <- "Yuba"
 popdens[1:313,] <- popdens[313:1,]
 countynames <- buildingpermitsfornames$County
 
@@ -41,7 +48,7 @@ medhomecsv <- medhomecsv[1:336,]
 
 if (TRUE) {
 tables <- list()
-num_cols = 11
+num_cols = 15
 start <- proc.time()
 for (i in 1:58) {
   data <- data.frame(matrix(ncol = num_cols, nrow = 336))
@@ -94,6 +101,22 @@ for (i in 1:58) {
   colnames(data)[11] <- c("Population Density")
   data[1:313, 11] <- clean.numeric(popdens[,i+1])
 
+  colnames(data)[12] <- c("Crime Occurrences")
+  print(i)
+  data[1:313,12] <- crime[121:433,i+1]
+
+  colnames(data)[13] <- c("Passenger Fares")
+  ind <- which(countyname == colnames(fares))
+  data[157:301,13] <- fares[,ind]
+
+  colnames(data)[14] <- c("Vehicle Hours Driven")
+  ind <- which(countyname == colnames(hours))
+  data[157:301,14] <- hours[,ind]
+  
+  colnames(data)[15] <- c("Vehicle Miles Driven")
+  ind <- which(countyname == colnames(miles))
+  data[157:301,15] <- miles[,ind]
+  
   tables[[i]] <- data
 }
 print(proc.time() - start)
