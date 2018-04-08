@@ -46,6 +46,9 @@ Alameda_new <- Alameda_new[, -1]
 # Remove vacancy rates column
 Alameda_new <- Alameda_new[, -2]
 
+# Remove passenger fares column
+Alameda_new <- Alameda_new[, -11]
+
 # Add in Passenger Fare
 # pas <- readRDS("Monthly_RDS/PassengerFareByMonth.rds")
 # PassengerFare <- c(rep_len(NA, length.out = length(Alameda_new[1])))
@@ -81,10 +84,10 @@ print(plsFit$validation$PRESS)
 print(coef(plsFit))
 # Extract coefficients from plsFit
 coefs <- coef(plsFit)
-coefs <- array(coefs, c(13, 1))
+coefs <- array(coefs, c(12, 1))
 coefs <- matrix(coefs)
 # Removing HAI
-data_mat <- data.matrix(Alameda_new_train[, -14])
+data_mat <- data.matrix(Alameda_new_train[, -13])
 # Predict HAI on the training set
 pred_hai <- data_mat %*% coefs
 
@@ -104,7 +107,7 @@ ggplot(only_non_na_rows) + geom_line(aes(x = Years, y = HAI), color = 'red') + g
 # plot(pred_hai)
 
 correct_hai <- hai[229:nrow(hai), 3]
-test_data_mat <- data.matrix(Alameda_new_test[,-12])
+test_data_mat <- data.matrix(Alameda_new_test[,-13])
 test_predictions <- test_data_mat %*% coefs
 
 test_df <-
