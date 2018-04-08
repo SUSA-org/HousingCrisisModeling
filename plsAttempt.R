@@ -47,16 +47,16 @@ Alameda_new <- Alameda_new[, -1]
 Alameda_new <- Alameda_new[, -2]
 
 # Add in Passenger Fare
-pas <- readRDS("Monthly_RDS/PassengerFareByMonth.rds")
-PassengerFare <- c(rep_len(NA, length.out = length(Alameda_new[1])))
-Alameda_new <- cbind(PassengerFare, Alameda_new)
-Alameda_new[c(157:301), 1] <- pas[, 3]
+# pas <- readRDS("Monthly_RDS/PassengerFareByMonth.rds")
+# PassengerFare <- c(rep_len(NA, length.out = length(Alameda_new[1])))
+# Alameda_new <- cbind(PassengerFare, Alameda_new)
+# Alameda_new[c(157:301), 1] <- pas[, 3]
 
 # Add in Crime
-crimedf <- readRDS("Monthly_RDS/CrimeCountByMonth.rds")
-Crime <- c(rep_len(NA, length.out = length(Alameda_new[2])))
-Alameda_new <- cbind(Crime, Alameda_new)
-Alameda_new[c(1:313), 1] <- rev(crimedf[c(1:313), 2])
+# crimedf <- readRDS("Monthly_RDS/CrimeCountByMonth.rds")
+# Crime <- c(rep_len(NA, length.out = length(Alameda_new[2])))
+# Alameda_new <- cbind(Crime, Alameda_new)
+# Alameda_new[c(1:313), 1] <- rev(crimedf[c(1:313), 2])
 
 Alameda_new <- as.data.frame(scale(Alameda_new))
 
@@ -81,10 +81,10 @@ print(plsFit$validation$PRESS)
 print(coef(plsFit))
 # Extract coefficients from plsFit
 coefs <- coef(plsFit)
-coefs <- array(coefs, c(11, 1))
+coefs <- array(coefs, c(13, 1))
 coefs <- matrix(coefs)
 # Removing HAI
-data_mat <- data.matrix(Alameda_new_train[, -12])
+data_mat <- data.matrix(Alameda_new_train[, -14])
 # Predict HAI on the training set
 pred_hai <- data_mat %*% coefs
 
