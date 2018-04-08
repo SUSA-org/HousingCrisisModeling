@@ -1,0 +1,34 @@
+---
+title: "InterpolationOfTransportation"
+author: "Ashley Chien"
+date: "March 15, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+vehicles <- readRDS("RDS/Vehicle_Inventory.RDS")
+
+
+years <- seq(as.Date("2003-01-01"), as.Date("2015-01-01"), by="months")
+df <- data.frame(matrix(ncol = 59, nrow = 145))
+df[,1] <- years
+
+for(j in 1:58) {
+ for (i in 1:12) {
+   sequence <- seq(crime[[i, j+1]], crime[[i+1, j+1]], length.out = 13)
+   df[((i-1)*12+1):((i-1)*12+13),j+1] <- sequence
+ }
+}
+vehicles$X1 <- rev(vehicles$X1)
+names3 <- colnames(crime)
+names3[1] <- 'Month'
+names(df) <- names3
+# saveRDS(df, 'CrimeCountByMonth.rds')
+
+
+```
