@@ -3,6 +3,8 @@
 # Column 14, the HAI column, is excluded because it is dependent with the other 
 # columns
 
+Alameda_new <- read.csv("Alameda_data.csv")
+
 Alameda_PCA <- prcomp(na.omit(Alameda_new[, -14]))
 
 # Looking at the explained variance per PC, choose the first 3
