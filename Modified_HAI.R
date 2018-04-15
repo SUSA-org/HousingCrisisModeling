@@ -55,31 +55,11 @@ Alameda_new <- as.data.frame(scale(Alameda_new))
 #Add dates back in 
 Alameda_new$Dates <- dates
 
-#Look at Data from 2006 to 2010
-focus <- Alameda_new[c(193:252), ]
-
 #Modify HAI
-Alameda_new$`Modified HAI`<- Alameda_new$HAI - 0.04*Alameda_new$Foreclosures - Alameda_new$Unemployment
-
-#Plot features to see the trend
-ggplot(focus) +
-  geom_line(aes(x = Dates, y = HAI), color = 'red') +
-  geom_line(aes(x = Dates, y = Unemployment), color = 'blue')
-
-ggplot(focus) +
-  geom_line(aes(x = Dates, y = HAI), color = 'red') +
-  geom_line(aes(x = Dates, y = focus$Foreclosures), color = 'blue')
-
-ggplot(focus) +
-  geom_line(aes(x = Dates, y = HAI), color = 'red') +
-  geom_line(aes(x = Dates, y = focus$`Modified HAI`), color = 'blue')
-
 Alameda_hai <- c(rep(NA,12), hai$Alameda)
 Alameda$hai <- Alameda_hai
 Alameda$`Modified HAI` <- Alameda$hai - 0.01*Alameda$Foreclosures - 0.1*Alameda$Unemployment
-Alameda_small <- Alameda[c(211:240),]
-ggplot(Alameda) +
+Alameda_small <- Alameda[c(97:332),]
+ggplot(Alameda_small) +
   geom_line(aes(x = Date, y = hai), color = 'red') +
-  geom_line(aes(x = Date, y = `Modified HAI`), color = 'blue') 
-  #geom_line(aes(x = Date, y = Unemployment), color = 'green') +
-  #geom_line(aes(x = Date, y = Foreclosures), color = 'yellow')
+  geom_line(aes(x = Date, y = `Modified HAI`), color = 'blue')
