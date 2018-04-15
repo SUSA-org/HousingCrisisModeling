@@ -40,7 +40,7 @@ colnames(miles)[50] <- "Yuba"
 popdens[1:313,] <- popdens[313:1,]
 countynames <- buildingpermitsfornames$County
 
-f <- function(x) as.numeric(gsub("[\\.,\\$%]","",x))
+f <- function(x) as.numeric(gsub("[,\\$%]","",x))
 clean.numeric <- function(x) sapply(x,f)
 medhomecsv <- read.csv("Old Excel Files/201712 MedianPricesofExistingDetachedHomesHistoricalData.csv")
 colnames(medhomecsv) %<>% (function(x) gsub(".", " ",x, fixed=TRUE))
@@ -102,7 +102,6 @@ for (i in 1:58) {
   data[1:313, 11] <- clean.numeric(popdens[,i+1])
 
   colnames(data)[12] <- c("Crime Occurrences")
-  print(i)
   data[1:313,12] <- crime[121:433,i+1]
 
   colnames(data)[13] <- c("Passenger Fares")
@@ -121,7 +120,7 @@ for (i in 1:58) {
 }
 print(proc.time() - start)
 }
-View(tables[1])
+View(tables[[1]])
 
 counts <- cbind(tables[[1]])
 counts[,-1] <- 0
