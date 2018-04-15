@@ -1,0 +1,85 @@
+library(pls)
+library(caret)
+library(AppliedPredictiveModeling)
+library(lars)
+library(MASS)
+library(ggplot2)
+
+# Normalizing HAI for response variable
+hai <- readRDS("TraditionalHAIByMonth.rds")
+normalized_hai <- data.frame(matrix(ncol = 45, nrow = 324))
+normalized_hai[, 1] <- hai[, 1]
+colnames(normalized_hai) <- colnames(hai)
+CA_hai <- (hai[, 2] - mean(hai[, 2])) / sd(hai[, 2])
+normalized_hai[, 2] <- CA_hai
+normalized_hai[, 3] <- (hai[, 3] - mean(hai[, 3])) / sd(hai[, 3])
+for (i in c(6, 8, 13, 15, 18, 21, 23, 24, 26:28, 30:34, 38, 43)) {
+  normalized_hai[, i] <- (hai[, i] - mean(hai[, i])) / sd(hai[, i])
+}
+
+
+ggplot(data = normalized_hai, aes(x = Month, y = CA)) + geom_line()
+
+# Read county monthly data
+data <- readRDS("Monthly_RDS/CountyMonthlyData.rds")
+
+# Extract only Alameda
+Alameda <- data[[1]]
+
+
+# Add normalized HAI column to Alameda dataframe to create Alameda_new
+years <-
+  seq(as.Date("1990-01-01"), as.Date("2017-12-01"), by = "months")
+Alameda[, 1] <- years
+temprow <- matrix(c(rep.int(NA, length(12 * 45))), nrow = 12, ncol = 45)
+newrow <- data.frame(temprow)
+colnames(newrow) <- colnames(hai)
+normalized_hai_new <- rbind(newrow, normalized_hai)
+normalized_hai_new[, 1] <-
+  seq(as.Date("1990-01-01"), as.Date("2017-12-01"), by = "months")
+Alameda_new <- cbind(Alameda, normalized_hai_new[, 3])
+colnames(Alameda_new) <- c(colnames(Alameda), "HAI")
+
+# Remove dates column
+dates <- Alameda_new[,1]
+Alameda_new <- Alameda_new[, -1]
+
+# Remove vacancy rates column
+Alameda_new <- Alameda_new[, -2]
+
+# Remove passenger fares column
+#Alameda_new <- Alameda_new[, -11]
+
+Alameda_new <- as.data.frame(scale(Alameda_new))
+
+#Add dates back in 
+Alameda_new$Dates <- dates
+
+#Look at Data from 2006 to 2010
+focus <- Alameda_new[c(193:252), ]
+
+#Modify HAI
+Alameda_new$`Modified HAI`<- Alameda_new$HAI - 0.04*Alameda_new$Foreclosures - Alameda_new$Unemployment
+
+#Plot features to see the trend
+ggplot(focus) +
+  geom_line(aes(x = Dates, y = HAI), color = 'red') +
+  geom_line(aes(x = Dates, y = Unemployment), color = 'blue')
+
+ggplot(focus) +
+  geom_line(aes(x = Dates, y = HAI), color = 'red') +
+  geom_line(aes(x = Dates, y = focus$Foreclosures), color = 'blue')
+
+ggplot(focus) +
+  geom_line(aes(x = Dates, y = HAI), color = 'red') +
+  geom_line(aes(x = Dates, y = focus$`Modified HAI`), color = 'blue')
+
+Alameda_hai <- c(rep(NA,12), hai$Alameda)
+Alameda$hai <- Alameda_hai
+Alameda$`Modified HAI` <- Alameda$hai - 0.01*Alameda$Foreclosures - 0.1*Alameda$Unemployment
+Alameda_small <- Alameda[c(211:240),]
+ggplot(Alameda) +
+  geom_line(aes(x = Date, y = hai), color = 'red') +
+  geom_line(aes(x = Date, y = `Modified HAI`), color = 'blue') 
+  #geom_line(aes(x = Date, y = Unemployment), color = 'green') +
+  #geom_line(aes(x = Date, y = Foreclosures), color = 'yellow')
