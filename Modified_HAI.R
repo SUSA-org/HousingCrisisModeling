@@ -58,8 +58,58 @@ Alameda_new$Dates <- dates
 #Modify HAI
 Alameda_hai <- c(rep(NA,12), hai$Alameda)
 Alameda$hai <- Alameda_hai
-Alameda$`Modified HAI` <- Alameda$hai - 0.01*Alameda$Foreclosures - 0.1*Alameda$Unemployment
 Alameda_small <- Alameda[c(97:332),]
-ggplot(Alameda_small) +
+
+#check same trend for Merced
+merced <- data[[24]]
+merced_hai <- c(rep(NA,12), hai$Merced)
+merced$hai <- merced_hai
+merced$`Modified HAI` <- merced$hai - 0.01*merced$Foreclosures - 0.1*merced$Unemployment
+ggplot(merced) +
   geom_line(aes(x = Date, y = hai), color = 'red') +
   geom_line(aes(x = Date, y = `Modified HAI`), color = 'blue')
+
+
+
+#Plot Modified HAI
+Alameda$`Modified HAI` <- Alameda$hai - 0.01*Alameda$Foreclosures - 0.1*Alameda$Unemployment
+Alameda$`Modified HAI` <- (Alameda$`Modified HAI` - mean(Alameda$`Modified HAI`, na.rm=T)) / sd(Alameda$`Modified HAI`, na.rm=T) * sd(Alameda$hai, na.rm=T) + mean(na.omit(Alameda$hai))
+ggplot(Alameda) +
+  geom_line(aes(x = Date, y = hai), color = 'red') +
+  geom_line(aes(x = Date, y = `Modified HAI`), color = 'blue')
+
+#Scaling modified HAI to match traditional HAI
+
+#Pick important features and fit linear model
+Alameda_lm <- Alameda[,-c(1,3,5,7,8,14,16)]
+model <- lm(`Modified HAI` ~ ., data = Alameda_lm)
+summary(model)
+
+for (i in 1:(dim(Alameda_lm)[2]-1)) {
+  name <- colnames(Alameda_lm)[i]
+   plot <- model %>% augment %>%
+    transmute(Alameda_lm[c(157:301),i], Error = .resid) %>%
+    ggplot(aes(Alameda_lm[c(157:301),i], Error)) + 
+    geom_point() + geom_hline(yintercept = 0, col = "red", linetype = "dashed") + ggtitle(name)
+   print(plot)
+}
+
+#Check normality
+model %>% augment %>%
+  transmute(Error = .resid) %>%
+  ggplot(aes(Error)) + geom_density(fill = "grey")
+
+#Check homoscedasticitiy
+error <- model$residuals
+y.fitted <- model$fitted.values
+plot(x = y.fitted, y = error) 
+
+
+
+
+#Plotting fitted vs residuals
+model %>% augment %>% ggplot(aes(Modified.HAI,.fitted))+geom_point()+geom_abline(intercept=0,slope=1)
+
+model %>% augment %>% ggplot(aes(Modified.HAI,.resid))+geom_point()
+
+
