@@ -74,6 +74,18 @@ ggplot(merced) +
 #Plot Modified HAI
 Alameda$`Modified HAI` <- Alameda$hai - 0.01*Alameda$Foreclosures - 0.1*Alameda$Unemployment
 Alameda$`Modified HAI` <- (Alameda$`Modified HAI` - mean(Alameda$`Modified HAI`, na.rm=T)) / sd(Alameda$`Modified HAI`, na.rm=T) * sd(Alameda$hai, na.rm=T) + mean(na.omit(Alameda$hai))
+tidyAlameda <- Alameda[97:332, c(1,16,17)]
+colnames(tidyAlameda) <- c("Date", "HAI", "Modified HAI")
+tidyAlameda %<>% gather("Index", "Value", -Date)
+
+tidyAlameda %>% ggplot(aes(Date, Value, col=Index)) + geom_line() + facet_wrap(~ Index, scale="fixed")
+ggthemr('flat dark')
+tidyAlameda %>% ggplot(aes(x=Date, y=Value, group=Index, colour=Index)) + geom_line()+ 
+  geom_vline(aes(xintercept=Date[130], color="2008 Crisis")) + 
+  ggtitle("Alameda HAI vs Modified HAI") 
+
+#+  scale_color_manual(name = "Index", values = c(`2008 Crisis`= "red", HAI = "cyan", `Modified HAI` = "orange"))
+
 ggplot(Alameda) +
   geom_line(aes(x = Date, y = hai), color = 'red') +
   geom_line(aes(x = Date, y = `Modified HAI`), color = 'blue')

@@ -76,7 +76,7 @@ for (i in 1:58) {
   
   colnames(data)[5] <- c("Unemployment")
   countyunemployment <- subset(unemployment, grepl(countyname,`Area Name`) & `Seasonally Adjusted (Y/N)`=="N")
-  data[,5] <- countyunemployment[,10]
+  data[,5] <- clean.numeric(countyunemployment[,11])
   
   colnames(data)[6] <- c("ValuePerSquareFoot")
   ind <- which(grepl(countyname, colnames(valuepersquarefoot)))
@@ -85,7 +85,7 @@ for (i in 1:58) {
   }
   
   colnames(data)[7] <- c("Foreclosures")
-  data[97:332, 7] <- clean.numeric(foreclosures[,i+1])
+  data[97:332, 7] <- rev(clean.numeric(foreclosures[,i+1]))
   
   
   colnames(data)[8] <- c("Gas Consumption")
@@ -121,7 +121,8 @@ for (i in 1:58) {
 print(proc.time() - start)
 }
 View(tables[[1]])
-
+saveRDS(tables, "Monthly_RDS/CountyMonthlyData.rds")
+write.csv(tables, "Monthly_CSV/CountyMonthlyData.csv")
 counts <- cbind(tables[[1]])
 counts[,-1] <- 0
 for (i in 1:length(tables)) {

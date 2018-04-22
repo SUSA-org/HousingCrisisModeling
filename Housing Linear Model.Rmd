@@ -1,0 +1,276 @@
+---
+title: "Housing Linear Model"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+library(pls)
+library(caret)
+library(AppliedPredictiveModeling)
+library(lars)
+library(MASS)
+library(ggplot2)
+hai <- readRDS("TraditionalHAIByMonth.rds")
+data <- readRDS("Monthly_RDS/CountyMonthlyData.rds")
+buildingpermitsfornames <- readRDS("RDS/BuildingPermits.RDS")
+countynames <- buildingpermitsfornames$County
+population <- readRDS("Monthly_RDS/Population.RDS")
+
+```
+
+## Find indices for counties with necessary data
+```{r}
+inds = c()
+for (i in 1:58) {
+  countyname = countynames[i]
+  ind <- which(grepl(countyname, colnames(valuepersquarefoot)))
+  if (length(ind) != 0) {
+    inds <- c(inds, i)
+  }
+}
+newinds = c()
+for (i in inds) {
+  countyname = countynames[i]
+  ind <- which(grepl(countyname, colnames(hai)))
+  if (length(ind) != 0) {
+    newinds <- c(newinds, i)
+  }
+}
+for (i in newinds) {
+  print(paste(i, countynames[i]))
+}
+```
+
+## Linear Model on single county
+```{r}
+# Extract only county
+county_ind <- 1
+county <- data[[newinds[county_ind]]]
+
+#Modify HAI
+county_hai <- c(rep(NA,12), hai$Alameda)
+county$hai <- county_hai
+
+#Plot Modified HAI
+county$`Modified HAI` <- county$hai - 0.01*county$Foreclosures - 0.1*county$Unemployment
+county$`Modified HAI` <- (county$`Modified HAI` - mean(county$`Modified HAI`, na.rm=T)) / sd(county$`Modified HAI`, na.rm=T) * sd(county$hai, na.rm=T) + mean(na.omit(county$hai))
+tidyCounty <- county[97:332, c(1,16,17)]
+colnames(tidyCounty) <- c("Date", "HAI", "Modified HAI")
+tidyCounty %<>% gather("Index", "Value", -Date)
+
+ggthemr('flat dark')
+tidyCounty %>% ggplot(aes(x=Date, y=Value, group=Index, colour=Index)) + geom_line()+ 
+  geom_vline(aes(xintercept=Date[130], color="2008 Crisis")) + 
+  ggtitle(paste(countynames[newinds[county_ind]], "HAI vs Modified HAI") )
+
+county_lm <- as.data.frame(scale(county[,-c(1,3,5,7,8,14,16)]))
+model <- lm(`Modified HAI` ~ ., data = county_lm)
+summary(model)
+```
+
+
+## Linear model on all counties without weighted averaging
+```{r}
+county <- data[[newinds[1]]]
+countyname <- countynames[newinds[1]]
+#Modify HAI
+hai_ind <- which(grepl(countyname, colnames(hai)))
+county_hai <- c(rep(NA,12), hai[,hai_ind])
+county$hai <- county_hai
+
+#Plot Modified HAI
+county$`Modified HAI` <- county$hai - 0.01*county$Foreclosures - 0.1*county$Unemployment
+county$`Modified HAI` <- (county$`Modified HAI` - mean(county$`Modified HAI`, na.rm=T)) / sd(county$`Modified HAI`, na.rm=T) * sd(county$hai, na.rm=T) + mean(na.omit(county$hai))
+
+county_lm <- as.data.frame(scale(county[,-c(1,3,5,7,8,14,16)]))
+all_counties <- cbind(county_lm)
+for (i in 2:length(newinds)) {
+  # Extract only county
+  county <- data[[newinds[i]]]
+  countyname <- countynames[newinds[i]]
+  #Modify HAI
+  hai_ind <- which(grepl(countyname, colnames(hai)))
+  county_hai <- c(rep(NA,12), hai[,hai_ind])
+  county$hai <- county_hai
+  
+  #Plot Modified HAI
+  county$`Modified HAI` <- county$hai - 0.01*county$Foreclosures - 0.1*county$Unemployment
+  county$`Modified HAI` <- (county$`Modified HAI` - mean(county$`Modified HAI`, na.rm=T)) / sd(county$`Modified HAI`, na.rm=T) * sd(county$hai, na.rm=T) + mean(na.omit(county$hai))
+
+  county_lm <- as.data.frame(scale(county[,-c(1,3,5,7,8,14,16)]))
+  all_counties <- rbind(all_counties, county_lm)
+}
+model <- lm(`Modified HAI` ~ ., data = all_counties)
+summary(model)
+```
+
+Predicted vs. Actual Plot
+```{r}
+county_lm_pred <- cbind(county[157:301,]$Date, county_lm[157:301,], county[157:301,]$`Modified HAI`, fitted.values(model))
+colnames(county_lm_pred)[c(1,11,12)] <- c("Date", "Modified HAI", "Predicted HAI")
+county_lm_pred %>% ggplot() + geom_line(aes(x=Date, y=`Predicted HAI`, colour="Predicted HAI")) + geom_line(aes(x=Date, y=`Modified HAI`, colour="Modified HAI")) + ggtitle("Alameda linear model results") + ylab("Index Value")
+```
+
+## Checking the assumptions
+```{r}
+for (i in 1:(dim(county_lm)[2]-1)) {
+  name <- colnames(county_lm)[i]
+  plot <- model %>% augment %>%
+    transmute(county_lm[c(157:301),i], Error = .resid) %>%
+    ggplot(aes(county_lm[c(157:301),i], Error)) + 
+    geom_point() + geom_hline(yintercept = 0, col = "red", linetype = "dashed") + ggtitle(name)
+  print(plot)
+}
+
+#Check normality
+model %>% augment %>%
+  transmute(Error = .resid) %>%
+  ggplot(aes(Error)) + geom_density(fill = "grey")
+
+#Check homoscedasticitiy
+error <- model$residuals
+y.fitted <- model$fitted.values
+plot(x = y.fitted, y = error) 
+
+#Plotting fitted vs residuals
+model %>% augment %>% ggplot(aes(Modified.HAI,.fitted))+geom_point()+geom_abline(intercept=0,slope=1)
+
+model %>% augment %>% ggplot(aes(Modified.HAI,.resid))+geom_point()
+
+
+```
+
+
+## Comparing coefficients across all models
+```{r}
+coeffs <- as.data.frame(matrix(ncol = 10, nrow = 29))
+colnames(coeffs) <- c("Intercept", colnames(county_lm[1:9]))
+for (i in 1:length(newinds)) {
+  # Extract only county
+  county <- data[[newinds[i]]]
+  
+  #Modify HAI
+  county_hai <- c(rep(NA,12), hai$Alameda)
+  county$hai <- county_hai
+  
+  #Plot Modified HAI
+  county$`Modified HAI` <- county$hai - 0.01*county$Foreclosures - 0.1*county$Unemployment
+  county$`Modified HAI` <- (county$`Modified HAI` - mean(county$`Modified HAI`, na.rm=T)) / sd(county$`Modified HAI`, na.rm=T) * sd(county$hai, na.rm=T) + mean(na.omit(county$hai))
+  ggplot(county) +
+    geom_line(aes(x = Date, y = hai), color = 'red') +
+    geom_line(aes(x = Date, y = `Modified HAI`), color = 'blue')
+  
+  county_lm <- as.data.frame(scale(county[,-c(1,3,5,7,8,14,16)]))
+  model <- lm(`Modified HAI` ~ ., data = county_lm)
+  coeffs[i,] <- coefficients(model)
+}
+for (i in 1:10) {
+  if (i == 1) {
+    title <- "Intercept"
+  } else {
+    title <- colnames(county_lm)[i-1]
+  }
+  print(ggplot(coeffs) + geom_line(aes(x=1:29, y=coeffs[,i])) + ggtitle(title))
+}
+```
+
+## Urban models
+```{r}
+urban_inds <- c(1, 10,30,33,34,56)
+coeffs <- as.data.frame(matrix(ncol = 10, nrow = length(urban_inds)))
+colnames(coeffs) <- c("Intercept", colnames(county_lm[1:9]))
+for (i in 1:length(urban_inds)) {
+  # Extract only county
+  county <- data[[urban_inds[i]]]
+  
+  #Modify HAI
+  county_hai <- c(rep(NA,12), hai$Alameda)
+  county$hai <- county_hai
+  
+  #Plot Modified HAI
+  county$`Modified HAI` <- county$hai - 0.01*county$Foreclosures - 0.1*county$Unemployment
+  county$`Modified HAI` <- (county$`Modified HAI` - mean(county$`Modified HAI`, na.rm=T)) / sd(county$`Modified HAI`, na.rm=T) * sd(county$hai, na.rm=T) + mean(na.omit(county$hai))
+  ggplot(county) +
+    geom_line(aes(x = Date, y = hai), color = 'red') +
+    geom_line(aes(x = Date, y = `Modified HAI`), color = 'blue')
+  
+  county_lm <- as.data.frame(scale(county[,-c(1,3,5,7,8,14,16)]))
+  model <- lm(`Modified HAI` ~ ., data = county_lm)
+  coeffs[i,] <- coefficients(model)
+}
+for (i in 1:10) {
+  print(ggplot(coeffs) + geom_line(aes(x=1:length(urban_inds), y=coeffs[,i])))
+}
+```
+
+## Rural models
+```{r}
+rural_inds <- setdiff(newinds, urban_inds)
+coeffs <- as.data.frame(matrix(ncol = 10, nrow = length(rural_inds)))
+colnames(coeffs) <- c("Intercept", colnames(county_lm[1:9]))
+for (i in 1:length(rural_inds)) {
+  # Extract only county
+  county <- data[[rural_inds[i]]]
+  
+  #Modify HAI
+  county_hai <- c(rep(NA,12), hai$Alameda)
+  county$hai <- county_hai
+  
+  #Plot Modified HAI
+  county$`Modified HAI` <- county$hai - 0.01*county$Foreclosures - 0.1*county$Unemployment
+  county$`Modified HAI` <- (county$`Modified HAI` - mean(county$`Modified HAI`, na.rm=T)) / sd(county$`Modified HAI`, na.rm=T) * sd(county$hai, na.rm=T) + mean(na.omit(county$hai))
+  ggplot(county) +
+    geom_line(aes(x = Date, y = hai), color = 'red') +
+    geom_line(aes(x = Date, y = `Modified HAI`), color = 'blue')
+  
+  county_lm <- as.data.frame(scale(county[,-c(1,3,5,7,8,14,16)]))
+  model <- lm(`Modified HAI` ~ ., data = county_lm)
+  coeffs[i,] <- coefficients(model)
+}
+for (i in 1:10) {
+  print(ggplot(coeffs) + geom_line(aes(x=1:length(rural_inds), y=coeffs[,i])))
+}
+```
+
+## Making population-averaged data
+```{r}
+coeffs <- as.data.frame(matrix(ncol = 10, nrow = 29))
+colnames(coeffs) <- c("Intercept", colnames(county_lm[1:9]))
+for (i in 1:length(newinds)) {
+  # Extract only county
+  county <- data[[newinds[i]]]
+  
+  #Modify HAI
+  county_hai <- c(rep(NA,12), hai$Alameda)
+  county$hai <- county_hai
+  
+  #Plot Modified HAI
+  county$`Modified HAI` <- county$hai - 0.01*county$Foreclosures - 0.1*county$Unemployment
+  county$`Modified HAI` <- (county$`Modified HAI` - mean(county$`Modified HAI`, na.rm=T)) / sd(county$`Modified HAI`, na.rm=T) * sd(county$hai, na.rm=T) + mean(na.omit(county$hai))
+  ggplot(county) +
+    geom_line(aes(x = Date, y = hai), color = 'red') +
+    geom_line(aes(x = Date, y = `Modified HAI`), color = 'blue')
+  
+  county_lm <- as.data.frame(scale(county[,-c(1,3,5,7,8,14,16)]))
+  model <- lm(`Modified HAI` ~ ., data = county_lm)
+  coeffs[i,] <- coefficients(model)
+}
+for (i in 1:10) {
+  if (i == 1) {
+    title <- "Intercept"
+  } else {
+    title <- colnames(county_lm)[i-1]
+  }
+  print(ggplot(coeffs) + geom_line(aes(x=1:29, y=coeffs[,i])) + ggtitle(title))
+}
+```
+
