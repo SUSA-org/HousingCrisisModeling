@@ -29,5 +29,7 @@ for(county_ind in 1:58) {
 
 bigvacmonth <- rbind(vacmonth[rep(1, 72), ], vacmonth, vacmonth[rep(229, 35),])
 colnames(bigvacmonth) <- c("Date", countynames)
+bigvacmonth[,1] <- seq(as.Date("1990-01-01"), as.Date("2017-12-01"), by="months")
 View(bigvacmonth)
 saveRDS(bigvacmonth,"Monthly_RDS/Population.RDS")
+population <- bigvacmonth

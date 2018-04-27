@@ -120,6 +120,15 @@ for (i in 1:58) {
 }
 print(proc.time() - start)
 }
+# Convert counts into rates
+rate_inds <- c(8,9,12,13,14,15)
+for (i in 1:58) {
+  for (rate_ind in rate_inds) {
+    tables[[i]][,rate_ind] = tables[[i]][,rate_ind] / population[,i+1]
+  }
+}
+
+
 View(tables[[1]])
 saveRDS(tables, "Monthly_RDS/CountyMonthlyData.rds")
 write.csv(tables, "Monthly_CSV/CountyMonthlyData.csv")

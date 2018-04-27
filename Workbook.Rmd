@@ -1,0 +1,54 @@
+---
+title: "Patrick"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+stcounty %>% ggplot() + geom_point(aes(x=Date, y=`Median Home Price`, color="Median Home Price")) + geom_point(aes(x=Date, y=`ValuePerSquareFoot`, colour="Value Per Square Foot"))
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r}
+as.data.frame(scale(all_counties)) %>% ggplot() + geom_point(aes(x=Date, y=`Median Home Price`, color="Median Home Price")) + geom_point(aes(x=Date, y=`ValuePerSquareFoot`, colour="Value Per Square Foot"))
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+alameda[1:313,] %>% ggplot() + geom_point(aes(x=`Population Density`, y=hai))
+alameda[1:313,] %>% ggplot() + geom_point(aes(x=`Population Density`, y=`Modified HAI`))
+```
+
+## Making indices
+```{r}
+for (i in 1:58) {
+  countyname = countynames[i]
+  ind <- which(grepl(countyname, colnames(hai)))
+  if (length(ind) != 0 & !all(is.na(hai[,ind]))) {
+    newinds <- c(newinds, i)
+  }
+}
+```
+
+## Foreclosure table
+```{r}
+foreclosuretable <- as.data.frame(matrix(ncol=59, nrow=336))
+colnames(foreclosuretable) <- c("Date", countynames)
+foreclosuretable$Date <- data[[1]]$Date
+for (i in 1:58) {
+  foreclosuretable[,i+1] <- data[[i]]$Foreclosures
+}
+```
+
